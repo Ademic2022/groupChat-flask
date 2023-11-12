@@ -12,7 +12,44 @@
     <div class="content">
         {% block body %}{% endblock %}
     </div>
+    <script>
+        var socket = io()
+        const messages = document.getElementById('messages')
 
-    <script src="{{ url_for('static', filename='javascript/base.js') }}"></script>
+        const createMessage = (profileName, msg)=>{
+            const content = `
+            <div class="message-content">
+                <span>
+                    <strong>${profileName}</strong>: ${msg}
+                </span>
+                <span class="muted">
+                    ${new Date().toLocaleString()}
+                </span>
+            </div>
+            `
+            messages.innerHTML += content
+        }
+        
+
+        socket.on('message', (data)=>{
+            createMessage(data.profileName, data.message)
+            const count = document.getElementById('count')
+            count.textContent=`(${data.count} members)`
+        })
+        
+        const sendMessage = ()=>{
+            const message = document.getElementById('message')
+            if (message.value == '') return;
+            socket.emit('message', {data: message.value})
+            message.value = ''
+        }
+    </script>
+    <!-- <script src="{{ url_for('static', filename='javascript/base.js') }}"></script> -->
+    {% for msg in messages %}
+        <!-- <script src="{{ url_for('static', filename='javascript/reloadMessage.js') }}"></script> -->
+        <script>
+            createMessage("{{msg.profileName}}", "{{msg.message}}")
+        </script>
+    {% endfor %}
 </body>
 </html>
