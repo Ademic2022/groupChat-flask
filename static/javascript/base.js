@@ -1,4 +1,6 @@
 // $(document).ready(()=>{
+    // Export createMessage
+    export { createMessage };
     var socket = io()
     const messages = document.getElementById('messages')
 
@@ -15,6 +17,8 @@
         `
         messages.innerHTML += content
     }
+    
+
     socket.on('message', (data)=>{
         createMessage(data.profileName, data.message)
     })
@@ -25,4 +29,5 @@
         socket.emit('message', {data: message.value})
         message.value = ''
     }
+
 // })
