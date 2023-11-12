@@ -2,12 +2,14 @@ from flask import Flask, render_template, request, session, redirect, url_for
 from flask_socketio import SocketIO, send, join_room, leave_room
 import random
 from string import ascii_uppercase
+from socketIo.socketIoEngine import ChatSocketIO
 
 app = Flask(__name__)
+rooms = {}
 app.config['SECRET_KEY'] = 'dvhdnmfgavregancb'
 socketio = SocketIO(app)
+sio = ChatSocketIO(socketio, rooms)
 
-rooms = {}
 def generate_unique_code(length):
     while True:
         code = ''
@@ -53,50 +55,19 @@ def groupchat():
         return redirect(url_for('index'))
     print(room)
 
-    return render_template('groupchat.html', room=room)
+    return render_template('groupchat.html', room=room, messages=rooms[room]['messages'])
 
 @socketio.on('message')
 def message(data):
-    room = session.get('room')
-    profileName = session.get('profileName')
-    if room not in rooms:
-        return
-    content = {
-        "profileName": profileName,
-        "message": data["data"],
-    }
-    send(content, to=room)
-    rooms[room]['messages'].append(content)
-    print(f"{profileName} said: {data['data']}")
+    sio.create_message(data)
 
 @socketio.on('connect')
-def connect(auth):
-    room = session.get('room')
-    profileName = session.get('profileName')
-    if not room or not profileName:
-        return
-    if room not in rooms:
-        leave_room(room)
-        return
-    
-    join_room(room)
-    send({"profileName": profileName, "message": "has joined the group chat"}, to=room)
-    rooms[room]['members'] += 1
-    print(f"{profileName} has joined the group")
+def connects(auth):
+    sio.handle_connect(auth)
 
 @socketio.on('disconnect')
 def disconnect():
-    room = session.get('room')
-    profileName = session.get('profileName')
-    leave_room(room)
-    if room in rooms:
-        rooms[room]['members'] -= 1
-        if rooms[room]['members'] <= 0:
-            del rooms[room]
-            return
-
-    send({"profileName": profileName, "message": "has left the group chat"}, to=room)
-    print(f"{profileName} has left the group")
+    sio.handle_disconnect()
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='localhost', port=5000)
+    socketio.run(app, debug=True, port=5008)
