@@ -2,7 +2,7 @@
 
 {% block body %}
     <div class="message-box">
-        <h2>Group Chat: {{ room }}</h2>
+        <h2>Group Chat: {{ room }} <span class="count" id="count"></span></h2>
         <div class="messages" id="messages">
 
         </div>
@@ -11,7 +11,4 @@
             <button type="submit" id="sendBtn" onclick="sendMessage()">Send</button>
         </div>
     </div>
-    <span class="muted">
-
-    </span>
 {% endblock %}
