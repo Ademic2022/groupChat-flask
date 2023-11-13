@@ -7,9 +7,8 @@
 .buttons{
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
     gap: 10px;
+    width: 40%;
 }
 .join{
     display: flex;
@@ -46,6 +45,11 @@
 }
 h2{
     text-align: center;
+}
+.join-btn{
+    width: 30%;
+    margin-left: 10px;
+    height: 40px;
 }
 #message{
     flex: 1;
