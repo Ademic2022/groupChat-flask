@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename = 'styles/index.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename = 'styles/loginRegister.css') }}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
     <title>chat app</title>
@@ -12,41 +13,8 @@
     <div class="content">
         {% block body %}{% endblock %}
     </div>
-    <script>
-        var socket = io()
-        const messages = document.getElementById('messages')
-
-        const createMessage = (profileName, msg)=>{
-            const content = `
-            <div class="message-content">
-                <span>
-                    <strong>${profileName}</strong>: ${msg}
-                </span>
-                <span class="muted">
-                    ${new Date().toLocaleString()}
-                </span>
-            </div>
-            `
-            messages.innerHTML += content
-        }
-        
-
-        socket.on('message', (data)=>{
-            createMessage(data.profileName, data.message)
-            const count = document.getElementById('count')
-            count.textContent=`(${data.count} members)`
-        })
-        
-        const sendMessage = ()=>{
-            const message = document.getElementById('message')
-            if (message.value == '') return;
-            socket.emit('message', {data: message.value})
-            message.value = ''
-        }
-    </script>
-    <!-- <script src="{{ url_for('static', filename='javascript/base.js') }}"></script> -->
+    <script src="{{ url_for('static', filename='javascript/base.js') }}"></script>
     {% for msg in messages %}
-        <!-- <script src="{{ url_for('static', filename='javascript/reloadMessage.js') }}"></script> -->
         <script>
             createMessage("{{msg.profileName}}", "{{msg.message}}")
         </script>
