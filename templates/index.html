@@ -2,16 +2,16 @@
 
 {% block body %}
     <form action="" method="POST" class="buttons">
-        <h3>Group Chat</h3>
+        <h2>Group Chat</h2>
         <div class="profile-setup">
             <label for="name">Profile Name</label>
-            <input type="text" id="profileName" placeholder="Set a Profile Name" name="profileName" value="{{profileName}}">
+            <input type="text" id="profileName" placeholder="Set a Profile Name" name="profileName" value="{{ current_user.username }}">
         </div>
         <div class="join">
             <input type="text" id="code" placeholder="Room Code" name="code" value="{{code}}">
-            <button type="submit" name="joinRoom" id="joinRoom" >Join a Room</button>
+            <button class="join-btn " type="submit" name="joinRoom" id="joinRoom" >Join Room</button>
         </div>
-        <button type="submit" name="createRoom" id="createRoom" class="createRoom">Create a Room</button>
+        <button type="submit" name="createRoom" id="createRoom" class="btn btn-primary btn-block btn-large">Create a Room</button>
         {% if error %}
             <ul>
                 <li>{{error}}</li>
