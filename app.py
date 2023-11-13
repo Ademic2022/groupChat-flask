@@ -54,7 +54,7 @@ def signup():
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def index():
-    # session.pop('room', None)
+    session.pop(current_user.username, None)
     if request.method == 'POST':
         profileName = current_user.username
         code = request.form.get('code').strip()
