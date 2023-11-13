@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, session, redirect, url_for
-from flask_socketio import SocketIO, send, join_room, leave_room
+from flask_socketio import SocketIO
 import random
 from string import ascii_uppercase
 from socketIo.socketIoEngine import ChatSocketIO
@@ -17,8 +17,21 @@ def generate_unique_code(length):
             code+=random.choice(ascii_uppercase)
         if code not in rooms:
             break
-    print(code)
     return code
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        pass
+
+    return render_template('login.html')
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        pass
+
+    return render_template('signup.html')
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
