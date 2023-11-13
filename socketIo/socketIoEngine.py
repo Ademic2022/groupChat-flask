@@ -33,7 +33,7 @@ class ChatSocketIO:
 
         join_room(room)
         self.rooms[room]['members'] += 1
-        send({"profileName": profile_name, "message": "has joined the group chat", "count":self.rooms[room]['members']}, to=room)
+        send({"profileName": profile_name, "message": "has joined the group chat"}, to=room)
         print(f"{profile_name} has joined the group")
 
     def handle_disconnect(self):
@@ -48,4 +48,4 @@ class ChatSocketIO:
             if self.rooms[room]['members'] <= 0:
                 del self.rooms[room]
                 return
-        send({"profileName": profile_name, "message": "has left the group chat", "count":self.rooms[room]['members']}, to=room)
+        send({"profileName": profile_name, "message": "has left the group chat"}, to=room)
