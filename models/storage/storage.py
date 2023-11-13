@@ -1,6 +1,6 @@
 import pymongo
 from hashlib import md5
-
+from models.users import User
 
 """Define the MongoDB connection URL"""
 # url = 'mongodb://localhost:27017'
@@ -33,4 +33,9 @@ def save_user(username, email, password):
         print(e)
 
 def get_user(username):
-    pass
+    user_data = users_collection.find_one({'_id': username})
+    if not user_data:
+        return None
+    return User(user_data['_id'], user_data['email'], user_data['password'])
+
+# save_user('dami', 'dami@gmail.com', 'dami')
