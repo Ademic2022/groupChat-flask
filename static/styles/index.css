@@ -43,8 +43,21 @@
     padding: 10px;
     display: flex;
 }
-h2{
+h2, h3{
     text-align: center;
+    color: #fff;
+}
+h3{
+    margin: 5px 0;
+}
+h3 span, h2 span{
+    color: #06ea19;
+}
+.group-title{
+    color: #000;
+}
+.group-title span{
+    cursor: pointer;
 }
 .join-btn{
     width: 30%;
