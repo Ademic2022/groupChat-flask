@@ -1,51 +1,21 @@
-from flask_socketio import send, join_room, leave_room, close_room, rooms
-from flask import session
+from flask_socketio import join_room, leave_room, close_room, rooms
 
 class ChatSocketIO:
-    def __init__(self, socketio, rooms):
+
+    def __init__(self, app, socketio):
         self.socketio = socketio
-        self.rooms = rooms
+        self.app = app
 
-    def create_message(self, data):
-        room = session.get('room')
-        profileName = session.get('profileName')
-        if room not in self.rooms:
-            return
-        content = {
-            "profileName": profileName,
-            "message": data["data"],
-        }
-        send(content, to=room)
-        self.rooms[room]['messages'].append(content)
-        print(f"{profileName} said: {data['data']}")
+    def handle_send_message_event(self, data):
+        self.app.logger.info(f"{data['username']} has sent a message to the room {data['room']}: {data['message']}")
+        self.socketio.emit('receive_message', data, room=data['room'])
 
-    def handle_connect(self, auth):
-        room = session.get('room')
-        profile_name = session.get('profileName')
+    def handle_join_room_event(self, data):
+        self.app.logger.info(f"{data['username']} has joined the room {data['room']}")
+        join_room(data['room'])
+        self.socketio.emit('join_room_announcement', data, room=data['room'])
 
-        if not room or not profile_name:
-            return
-
-        if room not in self.rooms:
-            leave_room(room)
-            return
-        
-
-        join_room(room)
-        self.rooms[room]['members'] += 1
-        send({"profileName": profile_name, "message": "has joined the group chat"}, to=room)
-        print(f"{profile_name} has joined the group")
-
-    def handle_disconnect(self):
-        room = session.get('room')
-        profile_name = session.get('profileName')
-
-        leave_room(room)
-
-        if room in self.rooms:
-            self.rooms[room]['members'] -= 1
-
-            if self.rooms[room]['members'] <= 0:
-                del self.rooms[room]
-                return
-        send({"profileName": profile_name, "message": "has left the group chat"}, to=room)
+    def handle_leave_room_event(self, data):
+        self.app.logger.info(f"{data['username']} has left the room {data['room']}")
+        leave_room(data['room'])
+        self.socketio.emit('leave_room_announcement', data, room=data['room'])
