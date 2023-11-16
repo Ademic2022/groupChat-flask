@@ -2,13 +2,22 @@
 
 {% block body %}
     <div class="message-box">
-        <h2>Group Chat: {{ room }} <span class="count" id="count"></span></h2>
+        <h2 class="group-title">Group Chat: <span>{{ room.name }}</span></h2>
+        <ul>
+            members:
+            {% for member in room_members %}
+            <li>{{ member._id.username }}</li>
+            {% endfor %}
+        </ul>
         <div class="messages" id="messages">
 
         </div>
         <div class="inputs">
             <input type="text" rows="3" name="message" id="message" placeholder="Message">
+            <input type="text" id="hiddenName" value="{{ current_user.username }}" hidden>
+            <input type="text" id="roomId" value="{{ room._id }}" hidden>
             <button type="submit" id="sendBtn" onclick="sendMessage()">Send</button>
+            <!-- <button type="submit" id="sendBtn">Send</button> -->
         </div>
     </div>
 {% endblock %}
