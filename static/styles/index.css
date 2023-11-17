@@ -79,3 +79,46 @@ h3 span, h2 span{
     font-size: 10px;
     color: #abaaaa;
 }
+.mini-header{
+    display: flex;
+    align-items: center;
+}
+.options, .group-options{
+    margin-left: 250px;
+}
+.group-options{
+    margin-left: 760px;
+}
+.option-content{
+    position: absolute;
+    background-color: #abaaaa;
+    border-radius: 5px;
+    padding: 10px;
+}
+.option-content ul{
+    padding: 0;
+}
+.option-content li{
+    cursor: pointer;
+    margin: 8px 0;
+    list-style: none;
+    padding: 5px;
+    border-radius: 5px;
+}
+.option-content ul a{
+    text-decoration: none;
+    color: red;
+}
+.option-content li:hover{
+    background-color: #fff;
+}
+.hidden{
+    display: none;
+}
+.sender-green {
+    color: green;
+}
+
+.sender-red {
+    color: red;
+}
