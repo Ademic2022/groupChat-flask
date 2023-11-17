@@ -14,10 +14,6 @@
         {% block body %}{% endblock %}
     </div>
     <script src="{{ url_for('static', filename='javascript/base.js') }}"></script>
-    {% for msg in messages %}
-        <script>
-            createMessage("{{msg.profileName}}", "{{msg.message}}")
-        </script>
-    {% endfor %}
+    {% block indexScript %}{% endblock %}
 </body>
 </html>
