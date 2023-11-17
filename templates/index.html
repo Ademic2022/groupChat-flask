@@ -1,8 +1,22 @@
 {% extends 'base.html' %}
 
 {% block body %}
+    <div class="mini-header">
+        <div class="title">
+            <h2>Group Chat</h2>
+        </div>
+        <div class="options">
+            <button class="btn btn-primary btn-block btn-large" id="optionButton">Options</button>
+            <div class="option-content hidden" id="optionContent">
+                <ul>
+                    <li id="createNewRoom">Create New Room</li>
+                    <li id="profile">Profile(coming soon)</li>
+                    <a href="{{ url_for('logout') }}"><li id="logOut">Logout</li></a>
+                </ul>
+            </div>
+        </div>
+    </div>
     <form action="" method="POST" class="buttons">
-        <h2>Group Chat</h2>
         <h3>Hi <span>{{ current_user.username.capitalize() }}</span></h3>
         <div class="profile-setup">
             <label for="name">Profile Name</label>
@@ -22,14 +36,18 @@
                     title="Enter a Room Code to Join an Existing Room" 
                     value="{{room.room_name}}" readonly>
                 <input type="text" name="room_id" value="{{room._id.room_id }}" hidden>
-                <button class="join-btn " type="submit" name="joinRoom_{{ room._id.room_id }}" id="joinRoom" >Join Room</button>
+                <button class="join-btn" type="submit" name="joinRoom_{{ room._id.room_id }}">Join Room</button>
             </div>
         {% endfor %}
-        <button 
-            type="submit" 
-            name="createRoom" id="createRoom" 
-            class="btn btn-primary btn-block btn-large">Create a Room
-        </button>
+        <div class="create-room hidden" id="createRoom">
+            <input type="text" name="room_name" placeholder="Room Name">
+            <input type="text" name="members" placeholder="Room Members: e.g james, mike, loren">
+            <button 
+                type="submit" 
+                name="createRoom" id="createRoom" 
+                class="btn btn-primary btn-block btn-large">Create a Room
+            </button>
+        </div>
         {% if error %}
             <ul>
                 <li>{{error}}</li>
@@ -37,4 +55,5 @@
         {% endif %}
     </form>
 
+    <script src="{{ url_for('static', filename='javascript/index.js') }}"></script>    
 {% endblock %}
