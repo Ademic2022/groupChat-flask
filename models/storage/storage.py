@@ -1,26 +1,32 @@
-import datetime 
 from datetime import datetime
+from pymongo import MongoClient, DESCENDING
 import pymongo
 from bson import ObjectId
 from hashlib import md5
 from models.users import User
+from dotenv import load_dotenv
+import os
+import logging
+
+"""LOAD ENVIRONMENT VARIABLES"""
+load_dotenv()
 
 class MongoDBConnection:
     def __init__(self):
-        self._url = "mongodb+srv://nodetest:nodetest@ademicnode.enl9bef.mongodb.net/?retryWrites=true&w=majority"
-        self.client = pymongo.MongoClient(self._url)
+        self._url = os.getenv("DATABASE_URI")
+        self.client = MongoClient(self._url)
         self.db = self.client['ChatDB']
         """Collections(users, rooms, room_members)"""
         self.users_collection = self.db.get_collection('users')
         self.rooms_collection = self.db.get_collection('rooms')
         self.room_members_collection = self.db.get_collection('room_members')
-
+        self.messages_collection = self.db.get_collection('messages')
 
         try:
             if self.client.server_info():
-                print("Connected to MongoDB")
+                pass
             else:
-                print("Failed to connect to MongoDB")
+                pass
         except pymongo.errors.ConnectionFailure as e:
             print(f"Connection to MongoDB failed: {e}")
 
@@ -47,7 +53,8 @@ class MongoDBConnection:
         return room_id
 
     def update_room(self, room_id, room_name):
-        self.rooms_collection.update_one({'_id':ObjectId(room_id)}, {'$set': {'name': room_name}})
+        self.rooms_collection.update_one({'_id': ObjectId(room_id)}, {'$set': {'name': room_name}})
+        self.room_members_collection.update_many({'_id.room_id': ObjectId(room_id)}, {'$set': {'room_name': room_name}})
 
     def get_room(self, room_id):
         return self.rooms_collection.find_one({'_id':ObjectId(room_id)})
@@ -65,7 +72,7 @@ class MongoDBConnection:
              'added_at':datetime.now(), 'is_room_admin': False} for username in usernames ])
 
     def remove_room_members(self, room_id, usernames):
-        self.room_members_collection.delete_many({'_id': {'$in': [{'room_id': room_id, 'username': username} for username in usernames]}})
+        self.room_members_collection.delete_many({'_id': {'$in': [{'room_id': ObjectId(room_id), 'username': username} for username in usernames]}})
 
     def get_room_members(self, room_id):
         return list(self.room_members_collection.find({'_id.room_id': ObjectId(room_id)}))
@@ -79,6 +86,13 @@ class MongoDBConnection:
     def is_room_admin(self, room_id, username):
         return self.room_members_collection.count_documents({'_id':{'room_id': ObjectId(room_id), 'username': username}, 'is_room_admin':True})
 
-# db = MongoDBConnection()
-# rooms = db.add_room_member('6553e2d375a87d37510f9934', 'ZZBN', 'tosin', 'ademic', is_room_admin=True)
-# print(rooms)
+    def save_messages(self, room_id, text, sender):
+        self.messages_collection.insert_one({'room_id':room_id, 'text':text, 'sender': sender, 'created_at':datetime.now()})
+
+    def get_messages(self, room_id, page=0):
+        MESSAGE_LIMIT = 10
+        OFFSET = page * MESSAGE_LIMIT
+        messages = list(self.messages_collection.find({'room_id': room_id}).sort('_id', DESCENDING).limit(MESSAGE_LIMIT).skip(OFFSET))
+        for message in messages:
+            message['created_at'] = message['created_at'].strftime(("%d %b, %H:%M:%S"))
+        return messages[::-1]
