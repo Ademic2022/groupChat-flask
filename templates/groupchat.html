@@ -1,6 +1,21 @@
 {% extends 'base.html' %}
 
 {% block body %}
+    <div class="mini-header">
+        <div class="title">
+            <h2>FastLink</h2>
+        </div>
+        <div class="group-options">
+            <button class="btn btn-primary btn-block btn-large" id="groupOptionButton">Options</button>
+            <div class="option-content hidden" id="optionContent">
+                <ul>
+                    <li id="editRoom">Edit Room</li>
+                    <li id="profile">Profile(coming soon)</li>
+                    <a href="{{ url_for('logout') }}"><li id="logOut">Logout</li></a>
+                </ul>
+            </div>
+        </div>
+    </div>
     <div class="message-box">
         <h2 class="group-title">Group Chat: <span>{{ room.name }}</span></h2>
         <ul>
@@ -9,15 +24,26 @@
             <li>{{ member._id.username }}</li>
             {% endfor %}
         </ul>
+        <button class="join-bt" id="loadPreviousMessages">load previous messages</button>
         <div class="messages" id="messages">
-
+            {% for message in messages %}
+                <div class="message-content">
+                    <span>
+                        <strong class="{{ 'sender-green' if current_user.username == message.sender else 'sender-red' }}">{{ message.sender }}</strong>: {{ message.text }}
+                    </span>
+                    
+                    <span class="muted {{ 'sender-green' if current_user.username == message.sender else 'sender-red' }}">
+                        {{ message.created_at }}
+                    </span>
+                </div>
+            {% endfor %}
         </div>
         <div class="inputs">
             <input type="text" rows="3" name="message" id="message" placeholder="Message">
             <input type="text" id="hiddenName" value="{{ current_user.username }}" hidden>
             <input type="text" id="roomId" value="{{ room._id }}" hidden>
             <button type="submit" id="sendBtn" onclick="sendMessage()">Send</button>
-            <!-- <button type="submit" id="sendBtn">Send</button> -->
         </div>
     </div>
+    <script src="{{ url_for('static', filename='javascript/groupchat.js') }}"></script>
 {% endblock %}
