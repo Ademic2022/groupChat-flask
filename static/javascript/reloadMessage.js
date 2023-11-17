@@ -1,1 +1,0 @@
-createMessage("{{msg.profileName}}", "{{msg.message}}")
