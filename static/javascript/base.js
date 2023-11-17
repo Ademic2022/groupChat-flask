@@ -1,10 +1,10 @@
 const socket = io.connect('http://127.0.0.1:5008/')
 const messages = document.getElementById('messages');
+const createRoom = document.getElementById('create-room');
 const username = document.getElementById('hiddenName').value
 const roomId = document.getElementById('roomId').value
 
-
-const createMessage = (profileName, msg) => {
+const createMessage = (profileName, msg, created_at) => {
     const isCurrentUser = profileName === username
     const textColor = isCurrentUser ? 'green' : 'red';
     console.log('createMessage called:', profileName, msg, isCurrentUser);
@@ -15,7 +15,7 @@ const createMessage = (profileName, msg) => {
                 <strong style="color: ${textColor};">${profileName}</strong>: ${msg}
             </span>
             <span class="muted" style="color: ${textColor};">
-                ${new Date().toLocaleString()}
+                ${created_at}
             </span>
         </div>
     `;
@@ -46,21 +46,19 @@ window.onbeforeunload = () => {
 };
 
 socket.on('receive_message', (data) => {
-    createMessage(data.username, data.message);
+    createMessage(data.username, data.message, data.created_at);
 });
 
 socket.on('join_room_announcement', (data) => {
     console.log(data);
     if (data.username !== username) {
         message = `<b>${data.username}</b> has joined the room`
-        createMessage(data.username, message);
+        createMessage(data.username, message, data.created_at);
     }
 });
 
 socket.on('leave_room_announcement', function (data) {
     console.log(data);
     message = `<b>${data.username}</b> has left the room`
-    createMessage(data.username, message);
-
-    
+    createMessage(data.username, message, data.created_at);   
 });
