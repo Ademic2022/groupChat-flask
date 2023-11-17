@@ -1,6 +1,8 @@
+from enum import member
+from pyexpat.errors import messages
 from flask import Flask, render_template, request, redirect, url_for
 from flask_socketio import SocketIO
-import random
+from bson.json_util import dumps
 from flask_socketio import rooms
 from flask_login import LoginManager, logout_user, login_user, login_required, current_user
 from string import ascii_uppercase
@@ -22,16 +24,8 @@ def load_user(username):
 socketio = SocketIO(app)
 sio = ChatSocketIO(app, socketio)
 
-def generate_unique_code(length):
-    while True:
-        code = ''
-        for _ in range(length):
-            code+=random.choice(ascii_uppercase)
-        if code not in rooms:
-            break
-    return code
 
-
+""" LOGIN ROUTE """
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -50,6 +44,7 @@ def login():
 
     return render_template('login.html')
 
+""" SIGN UP ROUTE """
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if current_user.is_authenticated:
@@ -70,6 +65,8 @@ def signup():
       
     return render_template('signup.html')
 
+
+""" HOME PAGE ROUTE """
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def index():
@@ -88,22 +85,21 @@ def index():
             
 
         if createRoom != False:
-            # usernames = [username.strip() for username in request.form.get('members').split(',')]
-            usernames = [username.strip() for username in []]
-            room = generate_unique_code(4)
+            room_name = request.form.get('room_name')
+            usernames = [username.strip() for username in request.form.get('members').split(',')]
 
             """Save Room and Insert bulk members to the Room"""
-            if len(usernames):
-                room_id = db.save_room(room, current_user.username)
+            if len(room_name) and len(usernames):
+                room_id = db.save_room(room_name, current_user.username)
                 if current_user.username in usernames:
                     usernames.remove(current_user.username)
-                db.add_room_members(room_id, room, usernames, current_user.username)
+                db.add_room_members(room_id, room_name, usernames, current_user.username)
 
                 return redirect(url_for('groupchat', room_id=room_id))
-
-            """Save Room and Insert Self as Room Member"""
-            room_id = db.save_room(room, current_user.username)
-            return redirect(url_for('groupchat', room_id=room_id))
+            else:
+                """Save Room and Insert Self as Room Member"""
+                room_id = db.save_room(room_name, current_user.username)
+                return redirect(url_for('groupchat', room_id=room_id))
 
         return redirect(url_for('groupchat'))
     
@@ -112,23 +108,65 @@ def index():
         rooms = db.get_rooms_for_user(current_user.username)
     return render_template('index.html', rooms=rooms)
 
+""" EDIT ROUTE """
+@app.route('/rooms/edit/<room_id>', methods=['GET', 'POST'])
+@login_required
+def edit_room(room_id):
+    print(room_id)
+    room = db.get_room(room_id)
+    if room and db.is_room_admin(room_id, current_user.username):
+        old_members = [member['_id']['username'] for member in db.get_room_members(room_id)]
+        room_members_str_format = ",".join(old_members)
+        if request.method == 'POST':
+            room_name = request.form.get('room_name')
+            room['name'] = room_name
+            db.update_room(room_id ,room_name)
+
+            new_members = [members.strip() for members in request.form.get('members').split(',')]
+            members_to_be_added = list(set(new_members) - set(old_members))
+            members_to_be_removed = list(set(old_members) - set(new_members))
+
+            if len(members_to_be_added):
+                db.add_room_members(room_id, room_name, members_to_be_added, current_user.username)
+            if len(members_to_be_removed):
+                db.remove_room_members(room_id, members_to_be_removed)
+
+            room_members_str_format = ",".join(new_members)
+            return redirect(url_for('groupchat', room_id=room_id))
+        return render_template('edit_room.html', room=room, room_members_str_format=room_members_str_format)
+    else:
+        return "Only Admin can edit this Room", 404
+
+""" CHAT ROOM """
 @app.route('/groupchat/<room_id>', methods=['POST', 'GET'])
 @app.route('/groupchat', defaults={'room_id': None}, methods=['POST', 'GET'])
 @login_required
 def groupchat(room_id):
     if room_id is None:
-        # flash('Please select a valid room.')
-        return redirect(url_for('index'))  # Replace with your default route
+        return redirect(url_for('index'))
 
     room = db.get_room(room_id)
     room_member = db.is_room_member(room_id, current_user.username)
 
     if room and room_member:
         room_members = db.get_room_members(room_id)
-        return render_template('groupchat.html', room=room, room_members=room_members)
+        messages = db.get_messages(room_id)
+        return render_template('groupchat.html', room=room, room_members=room_members, messages=messages)
 
     # flash('Invalid room or you are not a member.')
     return redirect(url_for('index'))
+
+""" MESSAGE API """
+@app.route('/rooms/<room_id>/messages', methods=['GET', 'POST'])
+@login_required
+def fetch_message(room_id):
+    room = db.get_room(room_id)
+    room_member = db.is_room_member(room_id, current_user.username)
+
+    if room and room_member:
+        page = int(request.args.get('page', 0))
+        messages = db.get_messages(room_id, page)
+        return dumps(messages)
 
 
 @app.route("/logout")
