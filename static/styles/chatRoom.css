@@ -235,6 +235,8 @@ aside{
     flex-direction: column;
     height: 78%;
     width: 100%;
+    overflow-y: scroll;
+    padding-bottom: 50px;
 }
 .main-profile{
     display: flex;
