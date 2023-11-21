@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.5.0/semantic.min.css">
     <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename = 'styles/chatRoom.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+
     <title>Chat Ui</title>
 </head>
 <body>
@@ -15,6 +17,7 @@
         <aside class="dynamic-content-aside" id="dynamicAside">
             <div class="back-button">
                 <i class="arrow left icon" id="backButton"></i>
+                <input type="text" id="hiddenName" value="{{ current_user.username }}" hidden>
                 <span class="title">New Group</span>
             </div>
             <div class="dynamic-content-aside-container hide" id="newGroupBlock">
@@ -74,7 +77,7 @@
                 <div class="ui list">
 
                     {% for room in rooms %}
-                        <div class="dynamic-content-custom-items">
+                        <div class="dynamic-content-custom-items" data-roomId="{{room._id.room_id }}" onclick="handleItemClick(this)">
                             <img class="profile-image" src="{{ url_for('static', filename = 'img/profile.png') }}">
                             <div class="title-wrapper">
                                 <div class="list-title">
@@ -100,7 +103,7 @@
         
 
 
-        <div class="temporary-main hide">
+        <div class="temporary-main" id="tempTemplate">
             <span data-icon="intro-md-beta-logo-dark" class="_3PwsU">
                 <svg viewBox="0 0 303 172" width="360" preserveAspectRatio="xMidYMid meet" class="" fill="none">
                     <path fill-rule="evenodd" clip-rule="evenodd" d="M229.565 160.229C262.212 149.245 286.931 118.241 283.39 73.4194C278.009 5.31929 212.365 -11.5738 171.472 8.48673C115.998 35.6999 108.972 40.1612 69.2388 40.1612C39.645 40.1612 9.51317 54.4147 5.74669 92.952C3.01662 120.885 13.9985 145.267 54.6373 157.716C128.599 180.373 198.017 170.844 229.565 160.229Z" fill="#364147"></path>
@@ -134,7 +137,7 @@
                 <div class="profile-picture">
                     <div class="main-profile">
                         <img src="{{ url_for('static', filename = 'img/profile.png') }}" alt="Profile image">
-                        <h3>Profile name</h3>
+                        <h3 id="roomTitle">Profile name</h3>
                     </div>
                 </div>
                 <div class="navigation-icons">
@@ -146,73 +149,8 @@
             
 
 
-            <div class="main-content">
-                <div class="message-block">
-                    <div class="message-block-sidebar">
-                       <p>A</p>
-                    </div>
-                    <div class="message-block-content">
-                        <p class="message"></p>
-                        <p class="message-block-content-name" style="color: green;">~ 
-                            <i>Ademic_code</i>
-                        </p>
-                        <p class="text-message">Hey please what do you think of Lenovo laptops?
-                            Is it good,could it do the same work with the same specifications as Hp?
-                            Dm's are highly appreciated
-                        </p>
-                        <span class="senders-time"><i>5:36PM</i></span>
-                    </div>
-                </div>
-
-
-                <div class="message-block receiver-block">
-                    <div class="message-block-content" style="border-radius: 10px 0 10px 10px;">
-                        <p class="message-receiver"></p>
-                        <p class="message-block-content-name-receiver" style="color: red;">~ 
-                            <i>Gracified!</i>
-                        </p>
-                        <p class="text-message">Hey please what do you think of Lenovo
-                            
-                        </p>
-                        <span class="receivers-time"><i>5:36PM</i></span>
-                    </div>
-                    <div class="message-block-sidebar">
-                        <p>G</p>
-                    </div>
-                </div>
-
-                <div class="message-block receiver-block">
-                    <div class="message-block-content" style="border-radius: 10px 0 10px 10px;">
-                        <p class="message-receiver"></p>
-                        <p class="message-block-content-name-receiver" style="color: red;">~ 
-                            <i>Jude-Strings</i>
-                        </p>
-                        <p class="text-message">Hey please what do you think of Lenovo
-                            
-                        </p>
-                        <span class="receivers-time"><i>5:36PM</i></span>
-                    </div>
-                    <div class="message-block-sidebar">
-                        <p>J</p>
-                    </div>
-                </div>
-
-                <div class="message-block">
-                    <div class="message-block-sidebar">
-                       <p>A</p>
-                    </div>
-                    <div class="message-block-content">
-                        <p class="message"></p>
-                        <p class="message-block-content-name" style="color: green;">~ 
-                            <i>Ademic_code</i>
-                        </p>
-                        <p class="text-message">
-                            Dm's are highly appreciated
-                        </p>
-                        <span class="senders-time"><i>5:36PM</i></span>
-                    </div>
-                </div>
-
+            <button class="join-bt" id="loadPreviousMessages">load previous messages</button>
+            <div class="main-content" id="messages">
 
             </div>
 
@@ -222,7 +160,8 @@
                 <i class="plus icon"></i>
                 <div class="main-search-bar">
                     <div class="ui icon input search-contents">
-                        <textarea type="text" placeholder="Type a message" class="custom-inpu"></textarea>
+                        <textarea type="text" placeholder="Type a message" class="custom-inpu" id="message"></textarea>
+                        <button type="submit" id="sendBtn" onclick="sendMessage()">Send</button>
                     </div>
                     <div class="main-filter-icon">
                         <i class="microphone icon"></i>
