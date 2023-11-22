@@ -235,6 +235,8 @@ aside{
     flex-direction: column;
     height: 78%;
     width: 100%;
+    overflow-y: scroll;
+    padding-bottom: 30px;
 }
 .main-profile{
     display: flex;
@@ -290,10 +292,14 @@ textarea::-webkit-scrollbar{
 
 .message-block, .receiver-block{
     display: flex;
-    max-width: 50%;
+    /* max-width: ; */
     height: fit-content;
-    padding: 10px;
+    padding: 12px;
     gap: 10px;
+}
+.message-block{
+    max-width: 50%;
+
 }
 .receiver-block{
     margin-left: auto;
@@ -334,10 +340,12 @@ textarea::-webkit-scrollbar{
     width: 45px;
     border-radius: 50%;
     left: 0px;
+    padding: 10px;
 }
 .message-block-sidebar p{
     color: var(--color-brown);
     font-size: 20px;
+    text-transform: uppercase;
 }
 
 
@@ -452,4 +460,8 @@ textarea::-webkit-scrollbar{
 .createGroup:hover{
     background-color: var(--color-select);
     /* border: 1px solid var(--color-default); */
+}
+.datetime{
+    padding-top: 2px;
+    text-align: center;
 }

@@ -1,6 +1,6 @@
 from enum import member
 from pyexpat.errors import messages
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_socketio import SocketIO
 from bson.json_util import dumps
 from flask_socketio import rooms
@@ -106,7 +106,7 @@ def index():
     rooms = []
     if current_user.is_authenticated:
         rooms = db.get_rooms_for_user(current_user.username)
-    return render_template('index.html', rooms=rooms)
+    return render_template('chatRoom.html', rooms=rooms)
 
 """ EDIT ROUTE """
 @app.route('/rooms/edit/<room_id>', methods=['GET', 'POST'])
@@ -137,24 +137,56 @@ def edit_room(room_id):
     else:
         return "Only Admin can edit this Room", 404
 
-""" CHAT ROOM """
+# """ CHAT ROOM """
+# @app.route('/groupchat/<room_id>', methods=['POST', 'GET'])
+# @app.route('/groupchat', defaults={'room_id': None}, methods=['POST', 'GET'])
+# @login_required
+# def groupchat(room_id):
+#     if room_id is None:
+#         return redirect(url_for('index'))
+
+#     room = db.get_room(room_id)
+#     room_member = db.is_room_member(room_id, current_user.username)
+
+#     if room and room_member:
+#         room_members = db.get_room_members(room_id)
+#         messages = db.get_messages(room_id)
+#         return render_template('groupchat.html', room=room, room_members=room_members, messages=messages)
+
+#     # flash('Invalid room or you are not a member.')
+#     return redirect(url_for('index'))
+
 @app.route('/groupchat/<room_id>', methods=['POST', 'GET'])
 @app.route('/groupchat', defaults={'room_id': None}, methods=['POST', 'GET'])
 @login_required
 def groupchat(room_id):
-    if room_id is None:
-        return redirect(url_for('index'))
+    try:
+        if room_id is None:
+            return redirect(url_for('index'))
 
-    room = db.get_room(room_id)
-    room_member = db.is_room_member(room_id, current_user.username)
+        room = db.get_room(room_id)
+        room_member = db.is_room_member(room_id, current_user.username)
 
-    if room and room_member:
-        room_members = db.get_room_members(room_id)
-        messages = db.get_messages(room_id)
-        return render_template('groupchat.html', room=room, room_members=room_members, messages=messages)
+        if room and room_member:
+            room_members = db.get_room_members(room_id)
+            messages = db.get_messages(room_id)
 
-    # flash('Invalid room or you are not a member.')
-    return redirect(url_for('index'))
+            # Convert ObjectId to string for jsonify
+            room['_id'] = str(room['_id'])
+            for member in room_members:
+                member['_id'] = str(member['_id'])
+            for message in messages:
+                message['_id'] = str(message['_id'])
+
+            # Return all data in JSON format
+            return jsonify(room=room, room_members=room_members, messages=messages)
+        
+        # You might want to handle the case where the room or user is invalid
+        return jsonify(error="Invalid room or you are not a member.")
+    
+    except Exception as e:
+        print(f"Error in groupchat route: {str(e)}")
+        return jsonify(error="Internal Server Error")
 
 """ MESSAGE API """
 @app.route('/rooms/<room_id>/messages', methods=['GET', 'POST'])
