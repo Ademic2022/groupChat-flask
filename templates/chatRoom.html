@@ -24,8 +24,8 @@
                 <div class="new-group-content">
                     <h3>Add New Group</h3>
                     <div class="ui icon input new-group-inputs">
-                        <input type="text" placeholder="Enter Group Name" class="custom-input">
-                        <input type="text" placeholder="Add Members e.g jane,larry,james" class="custom-input">
+                        <input type="text" placeholder="Enter Group Name" class="custom-input" id="groupName" required>
+                        <input type="text" placeholder="Add Members e.g jane,larry,james" class="custom-input" id="groupMembers" required>
                         <button 
                             type="submit" 
                             name="createRoom" id="createRoom" 
@@ -164,11 +164,11 @@
             </div>
         </div>
         <div class="chat-room-options hide" id="chatOptionsContent">
-            <p>Contact Info</p>
-            <p>Mute Notification</p>
+            <p>Edit Group</p>
+            <p>Group Info</p>
             <p>Clear Chats</p>
-            <p>Delete Chats</p>
             <p>Delete Group</p>
+            <p>Mute Notification</p>
             <p>Block</p>
         </div>
         <div class="gen-options hide" id="genOptionsContent">
@@ -177,7 +177,7 @@
             <p>Settings</p>
             <p>Select Chat</p>
             <p>Invite User</p>
-            <p>Logout</p>
+            <p id="logOut">Logout</p>
         </div>
     </div>
     
