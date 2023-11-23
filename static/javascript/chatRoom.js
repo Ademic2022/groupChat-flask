@@ -89,7 +89,6 @@ const handleItemClick = (element)=>{
 
 
     var roomId = element.getAttribute('data-roomId');
-    console.log('Item clicked with roomId:', roomId);
     const messages = document.getElementById('messages');
     
     initializeSocketConnection(username, roomId);
@@ -156,7 +155,6 @@ function initializeSocketConnection(username, roomId) {
     });
 
     socket.on('join_room_announcement', (data) => {
-        console.log(data);
 
         if (data.username !== username) {
             message = `<b>${data.username}</b> has joined the room`;
@@ -165,7 +163,6 @@ function initializeSocketConnection(username, roomId) {
     });
 
     socket.on('leave_room_announcement', function (data) {
-        console.log(data);
         message = `<b>${data.username}</b> has left the room`;
         createMessage(data.username, message, data.created_at);
     });
@@ -202,7 +199,6 @@ const fetchRoomMessages = (roomId) => {
         url: '/groupchat/' + roomId,
         success: function(response) {
             // Handle success (if needed)
-            console.log('POST request successful:', response);
             document.getElementById('roomTitle').textContent = response.room.name
             messages.innerHTML =''
             if (Array.isArray(response.messages)) {
@@ -296,5 +292,63 @@ const fetchPreviousMessageWhenUserScrolltoTop = (roomId) => {
         }
     });
 };
+
+
+// ================================== FUNCTION THAT CREATES NEW GROUP ============================ //
+const createNewGroup = () => {
+    // Get form data
+    let groupName = $('#groupName').val();
+    let groupMembers = $('#groupMembers').val();
+
+    if (groupName !== '' && groupMembers !== ''){
+        const formData = {
+            groupName: groupName,
+            groupMembers: groupMembers
+        };
+
+
+        // Send the POST request
+        $.ajax({
+            type: 'POST',
+            url: '/',
+            data: formData,
+            success: function (response) {
+                // console.log('POST request successful:', response);
+                window.location.reload();
+            },
+            error: function (error) {
+                console.error('Error in POST request:', error);
+            }
+        });
+
+        
+        contentAside.classList.toggle('hide')
+
+        $('#groupName').val('');
+        $('#groupMembers').val('');
+    }
+    
+};
+
+const logOut = () => {
+        // Send the POST request
+    $.ajax({
+        type: 'GET',
+        url: '/logout',
+        success: function (response) {
+            window.location.reload();
+        },
+        error: function (error) {
+            console.error('Error in POST request:', error);
+        }
+    });
+};
+
+const createRoom = document.getElementById('createRoom')
+const logOutBtn = document.getElementById('logOut')
+
+createRoom.addEventListener('click', createNewGroup)
+logOutBtn.addEventListener('click', logOut)
+
 
 
