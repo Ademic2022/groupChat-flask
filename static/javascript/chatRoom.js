@@ -66,11 +66,46 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    document.getElementById('backButton').addEventListener('click', () => {
-        contentAside.classList.toggle('hide');
-        newGroupBlock.classList.add('hide');
-        editGroupBlock.classList.add('hide');
-    });
+    const backButton = document.querySelectorAll('#backButton')
+    backButton.forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            const dataAttribute = e.currentTarget.getAttribute('data-icon')
+            if (dataAttribute === 'arrow'){
+                contentAside.classList.toggle('hide');
+                newGroupBlock.classList.add('hide');
+                editGroupBlock.classList.add('hide');
+            }else if(dataAttribute === 'times'){
+                const hideContent = document.querySelectorAll('.hideContent')
+                // every time the back button is clicked, hide all element with class hideContent
+                hideContent.forEach((e)=>{
+                    e.classList.add('hide')
+                })
+            }
+        })
+    })
+
+    const chatRoomOptionBtnLogic = ()=>{
+        const chatRoomOptionBtn = document.querySelectorAll('.chat-room-option-btn')
+        chatRoomOptionBtn.forEach((button)=>{
+            button.addEventListener('click', (e)=>{
+                e.preventDefault()
+                const dataAttributeVal = e.currentTarget.getAttribute('data-btn_type');
+                const availableAttributes = ['editRoom','roomInfo','clearChats','deleteChats','reportUser','block']
+                const rightBar = document.getElementById('rightBar')
+                if (dataAttributeVal === availableAttributes[0]){
+                    const editRoomContent = document.getElementById('editRoomContent')
+                    rightBar.classList.toggle('hide')
+                    editRoomContent.classList.remove('hide')
+                }
+                else if (dataAttributeVal === availableAttributes[1]){
+                    const roomInfo = document.getElementById('roomInfo')
+                    roomInfo.classList.remove('hide')
+                    rightBar.classList.toggle('hide')
+                }
+            })
+        })
+    }
+    chatRoomOptionBtnLogic()
 });
 
 
@@ -81,15 +116,19 @@ const scrollToBottom = () =>{
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
+// =============== SUPER FUNCTION =========== //
 
 const handleItemClick = (element)=>{
     const tempTemplate = document.getElementById('tempTemplate')
-    const username = document.getElementById('hiddenName').value    
+    const rightBar = document.getElementById('rightBar')
+    const username = document.getElementById('hiddenName').value  
+    // hide rightBar and left bar  
     tempTemplate.classList.add('hide')
+    rightBar.classList.add('hide')
 
 
     var roomId = element.getAttribute('data-roomId');
-    const messages = document.getElementById('messages');
+    // const messages = document.getElementById('messages');
     
     initializeSocketConnection(username, roomId);
 
@@ -199,7 +238,53 @@ const fetchRoomMessages = (roomId) => {
         url: '/groupchat/' + roomId,
         success: function(response) {
             // Handle success (if needed)
-            document.getElementById('roomTitle').textContent = response.room.name
+            // console.log(response.room_members);
+            const roomName = response.room.name
+            document.getElementById('roomTitle').textContent = roomName
+            const chatRoomOptionBtn = document.querySelectorAll('.chat-room-option-btn')
+            chatRoomOptionBtn.forEach((button)=>{
+                button.addEventListener('click', (e)=>{
+                    e.preventDefault()
+                    const dataAttributeVal = e.currentTarget.getAttribute('data-btn_type');
+                    const availableAttributes = ['editRoom','roomInfo','clearChats','deleteChats','reportUser','block']
+                    if (dataAttributeVal === availableAttributes[1]){
+                        RoomInformation(response.room_members, roomName)      
+                    }
+                    else if(dataAttributeVal === availableAttributes[0]){
+                        const members_check = response.room_members
+                        let isCurrentUser = false
+
+                        members_check.forEach((admin)=>{
+                            if (admin.is_room_admin){
+                                const profileName = document.getElementById('hiddenName').value
+                                isCurrentUser = profileName === admin.added_by      
+                            }
+                        })
+                        if(isCurrentUser){
+                            const editRoomBtn = document.getElementById('editRoomBtn')
+                            editRoomBtn.addEventListener('click', (e)=> {
+                                e.preventDefault()
+                                editRoomLogic(response.room_members, roomName, roomId)
+                                
+                                window.location.reload();
+                                document.getElementById('rightBar').classList.toggle('hide')
+                            })
+                        }
+                        else{
+                            const readonly = document.querySelectorAll('.readonly');
+                            const editRoomBtn = document.getElementById('editRoomBtn')
+                            // disable the submit button
+                            editRoomBtn.disabled = true;
+                            readonly.forEach((e)=>{
+                                e.readOnly = true
+                            })
+
+                            console.log('Only the group admin is authorized to edit this room');
+                        }
+                        
+                    }
+                })
+            })
             messages.innerHTML =''
             if (Array.isArray(response.messages)) {
                 response.messages.forEach(message => {
@@ -216,6 +301,51 @@ const fetchRoomMessages = (roomId) => {
             console.error('Error in POST request:', error);
         }
     });
+}
+
+// =============== FUNCTION THAT FETCH GROUP INFORMATIONS ==================== //
+
+function RoomInformation(members, roomName) {
+    const roomMembers = document.getElementById('roomMembers');
+    document.getElementById('roomName').textContent = roomName
+    let content = ''; // Initialize an empty string to accumulate content
+
+    members.forEach(member => {
+        if (member._id) {
+            // Clean up _id string and replace 'ObjectId'
+            const cleanedIdString = member._id
+                .replace(/'/g, '"')
+                .replace(/ObjectId\(/g, '')
+                .replace(/\)/g, '');
+
+            try {
+                const idObject = JSON.parse(cleanedIdString);
+                const username = idObject.username;
+
+                // Append to the content string
+                content += `
+                    <div class="dynamic-content-custom-items">
+                        <img class="profile-image" src="../static/img/profile.png">
+                        <div class="title-wrapper">
+                            <div class="list-title">
+                                <h3>${username}</h3>
+                            </div>
+                            <div class="subtitle">
+                                <p>Lorem ipsum dolor sit, amet consectetur adipisici.</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error parsing JSON:', error);
+            }
+        } else {
+            console.error('_id is undefined for a member:', member);
+        }
+    });
+
+    // Set the accumulated content to the roomMembers element
+    roomMembers.innerHTML = content;
 }
 
 
@@ -264,6 +394,7 @@ const receiverMessagesTemplate = (username, message, created_at, position) => {
     messages.insertAdjacentHTML(position, content);
 }
 
+// =============== FUNCTION THAT FETCHES PREVIOUS MESSAGE WHEN USER SCROLL TO THE TOP OF CHAT PAGE ==================== //
 
 const fetchPreviousMessageWhenUserScrolltoTop = (roomId) => {
     const messagesContainer = document.getElementById('messages');
@@ -293,6 +424,64 @@ const fetchPreviousMessageWhenUserScrolltoTop = (roomId) => {
     });
 };
 
+// =============== FUNCTION THAT HANDLES EDIT ROOM ==================== //
+const editRoomLogic = (members, groupName, roomId)=>{
+    let room_members = []; // Initialize an empty string to accumulate content
+    members.forEach(member => {  
+        if (member._id) {
+            // Clean up _id string and replace 'ObjectId'
+            const cleanedIdString = member._id
+                .replace(/'/g, '"')
+                .replace(/ObjectId\(/g, '')
+                .replace(/\)/g, '');
+
+            try {
+                const idObject = JSON.parse(cleanedIdString);
+                const username = idObject.username;
+                room_members.push(username)
+
+            } catch (error) {
+                console.error('Error parsing JSON:', error);
+            }
+        } else {
+            console.error('_id is undefined for a member:', member);
+        }
+    });
+    
+    const newGroupName = document.getElementById('newGroupName')
+    const newGroupMembers = document.getElementById('newGroupMembers')
+    // const newDescription = document.getElementById('newDescription')
+    newGroupMembers.value = room_members.join(',')
+    newGroupName.value = groupName
+
+    // if form is not empty
+    if (newGroupMembers.value !== '' && newGroupName.value !== ''){
+        const formValues = {
+            newGroupNameValue: newGroupName.value,
+            newGroupMembersValue: newGroupMembers.value
+        }
+
+        // send a POST Request to the back end with the form data
+        const url = `/rooms/edit/${roomId}`
+        fetch(url, {
+            method: 'POST',
+            body: JSON.stringify(formValues),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        }).then(data => {
+            console.log('Success:', data);
+        }).catch(error => {
+            console.error('Error:', error);
+        });
+    }
+        
+}
 
 // ================================== FUNCTION THAT CREATES NEW GROUP ============================ //
 const createNewGroup = () => {
@@ -329,6 +518,8 @@ const createNewGroup = () => {
     }
     
 };
+
+// =============== THIS FUNCTION LOGS USER OUT ==================== //
 
 const logOut = () => {
         // Send the POST request
