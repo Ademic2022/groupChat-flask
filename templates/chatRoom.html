@@ -16,7 +16,7 @@
 
         <aside class="dynamic-content-aside" id="dynamicAside">
             <div class="back-button">
-                <i class="arrow left icon" id="backButton"></i>
+                <i class="arrow left icon" id="backButton" data-icon="arrow"></i>
                 <input type="text" id="hiddenName" value="{{ current_user.username }}" hidden>
                 <span class="title">New Group</span>
             </div>
@@ -132,6 +132,43 @@
         </div>
 
         
+        <div class="main-content-aside-wrapper hide hideContent" id="rightBar">
+            <div class="back-button">
+                <i class="times icon" id="backButton" data-icon="times"></i>
+                <span class="title">Back</span>
+            </div>
+            <div class="edit-group-content hide hideContent" id="editRoomContent">
+                <h3>Edit Room</h3>
+                <div class="ui icon input edit-group-inputs">
+                    <input type="text" placeholder="Enter Group Name" class="custom-input readonly" id="newGroupName">
+                    <input type="text" placeholder="Add Members e.g jane,larry,james" class="custom-input readonly" id="newGroupMembers">
+                    <input type="text" placeholder="Descriptions" class="custom-input readonly" id="newDescription">
+                    <button 
+                        type="submit" 
+                        name="editGroup" id="editRoomBtn" 
+                        class="createGroup">Save Changes
+                    </button>
+                </div>
+            </div>
+
+            <div class="roomInfo hide hideContent" id="roomInfo">
+                <div class="room-info-content">
+                    <h2 id="roomName">Room Name</h2>
+                    <div class="group-image">
+                        <img src="../static/img/profile.png" alt="">
+                    </div>
+                    <div class="room-description">
+                        <h3>Lorem ipsum dolor sit amet consectetur adipisicing elit.</h3>
+                    </div>
+                    <h3>Room Members:</h3>
+                    <div class="room-members" id="roomMembers">
+
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+
         <div class="main">
             <div class="main-headers">
                 <div class="profile-picture">
@@ -164,12 +201,12 @@
             </div>
         </div>
         <div class="chat-room-options hide" id="chatOptionsContent">
-            <p>Edit Group</p>
-            <p>Group Info</p>
-            <p>Clear Chats</p>
-            <p>Delete Group</p>
-            <p>Mute Notification</p>
-            <p>Block</p>
+            <p class="chat-room-option-btn" data-btn_type="roomInfo">Room Info</p>
+            <p class="chat-room-option-btn" data-btn_type="editRoom">Edit Room</p>
+            <p class="chat-room-option-btn" data-btn_type="clearChats">Clear Chats</p>
+            <p class="chat-room-option-btn" data-btn_type="deleteChats">Delete Chats</p>
+            <p class="chat-room-option-btn" data-btn_type="reportUser">Report User</p>
+            <p class="chat-room-option-btn" data-btn_type="block">Block</p>
         </div>
         <div class="gen-options hide" id="genOptionsContent">
             <p class="addNewGroupButton" data-button_name="newGroup">New Group</p>
