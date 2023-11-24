@@ -65,6 +65,12 @@ aside{
     border-radius: 10px !important;
     word-wrap: break-word !important;
 }
+.edit-group-inputs .custom-input{
+    background-color: var(--color-default) !important;
+    color: var(--color-white) !important;
+    border-radius: 10px !important;
+    word-wrap: break-word !important;
+}
 .search-contents{
     width: 90%;
 }
@@ -221,14 +227,15 @@ aside{
     padding: 8px 0;
 }
 .main-footers{
-    position: fixed;
-    bottom: -610px;
+    position: relative;
+    bottom: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 60%;
+    width: 100%;
     height: fit-content;
-    padding: 18px 0;
+    padding: 10px 0;
+    margin-bottom: auto;
 }
 .main-content{
     display: flex;
@@ -257,18 +264,16 @@ aside{
 .main-search-bar{
     display: flex;
     align-items: center;
+    justify-content: center;
     background-color: var(--color-select);
     height: 40%;
-    width: 100%;
+    width: 95%;
 }
 .main-filter-icon{
     font-size: 20px;
     cursor: pointer;
 }
 
-.hide{
-    display: none;
-}
 .search-contents textarea{
     outline: none;
     resize: none;
@@ -426,17 +431,25 @@ textarea::-webkit-scrollbar{
 
 
 /* ===================== ALTERNATIVE ASIDE ======================*/
-.back-button{
+.back-button, .main-content-aside-wrapper .back-button{
     margin-top: 5px;
     padding: 15px;
     font-size: 17px;
     color: var(--color-grey);
 }
+.main-content-aside-wrapper .back-button{
+    margin-top: 7px;
+}
 .back-button i{
     margin-right: 15px;
     cursor: pointer;
 }
-
+.main-content-aside-wrapper .back-button i{
+    font-size: 20px;
+}
+.main-content-aside-wrapper .back-button i:hover{
+    color: var(--color-default);
+}
 .new-group-content, .edit-group-content{
     display: flex;
     align-items: center;
@@ -444,24 +457,68 @@ textarea::-webkit-scrollbar{
     flex-direction: column;
     margin-top: 8%;
 }
-.new-group-inputs{
+.new-group-inputs, .edit-group-inputs{
     flex-direction: column;
     gap: 20px;
     width: 90%;
 }
-.createGroup{
+.createGroup, .editGroup{
     background-color: var(--color-default);
     border-radius: 10px;
     border: 1px solid var(--color-grey);
     height: 50px;
     color: var(--color-grey);
     font-size: 18px;
+    cursor: pointer;
 }
 .createGroup:hover{
     background-color: var(--color-select);
-    /* border: 1px solid var(--color-default); */
 }
 .datetime{
     padding-top: 2px;
     text-align: center;
+}
+
+/* &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& MAIN CONTENT ASIDE WRAPPER &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& */
+.main-content-aside-wrapper{
+    position: fixed;
+    background-color: var(--color-select);
+    margin-left: 40%;
+    height: 100vh;
+    display: flex;
+    width: 60%;
+    flex-direction: column;
+    z-index: 999;
+}
+.room-info-content{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding-top: 20px;
+}
+.room-info-content h3, .room-info-content h2 {
+    text-align: center;
+}
+.group-image{
+    display: flex;
+    flex-direction: column;
+    height: 150px;
+    width: 150px;
+}
+.group-image img{
+    border-radius: 50%;
+}
+.room-members {
+    position: relative;
+    overflow-y: scroll;
+    background-color: #262525;
+    border-radius: 15px;
+    max-height: 350px;
+}
+.room-members::-webkit-scrollbar{
+    display: none;
+}
+.hide{
+    display: none;
 }
