@@ -96,27 +96,31 @@ def index():
 @app.route('/rooms/edit/<room_id>', methods=['GET', 'POST'])
 @login_required
 def edit_room(room_id):
-    print(room_id)
     room = db.get_room(room_id)
     if room and db.is_room_admin(room_id, current_user.username):
         old_members = [member['_id']['username'] for member in db.get_room_members(room_id)]
         room_members_str_format = ",".join(old_members)
         if request.method == 'POST':
-            room_name = request.form.get('room_name')
+            # Access the JSON data from the request
+            data = request.json
+
+            room_name = data.get('newGroupNameValue')
+            membersdata = data.get('newGroupMembersValue')
+            
             room['name'] = room_name
             db.update_room(room_id ,room_name)
 
-            new_members = [members.strip() for members in request.form.get('members').split(',')]
+            new_members = [members.strip() for members in membersdata.split(',')]
             members_to_be_added = list(set(new_members) - set(old_members))
             members_to_be_removed = list(set(old_members) - set(new_members))
-
             if len(members_to_be_added):
                 db.add_room_members(room_id, room_name, members_to_be_added, current_user.username)
             if len(members_to_be_removed):
                 db.remove_room_members(room_id, members_to_be_removed)
 
             room_members_str_format = ",".join(new_members)
-            return redirect(url_for('groupchat', room_id=room_id))
+            return jsonify({"message": f"Successfully edited Room: {room_name}"}), 200
+            # return redirect(url_for('groupchat', room_id=room_id))
         return render_template('edit_room.html', room=room, room_members_str_format=room_members_str_format)
     else:
         return "Only Admin can edit this Room", 404
@@ -143,7 +147,6 @@ def groupchat(room_id):
                 member['_id'] = str(member['_id'])
             for message in messages:
                 message['_id'] = str(message['_id'])
-
             # Return all data in JSON format
             return jsonify(room=room, room_members=room_members, messages=messages)
         
