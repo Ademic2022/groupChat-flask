@@ -1,16 +1,6 @@
-$('.dynamic-content-custom-items')
-.hover(
-    function () {
-    $('.element-options', this).transition({
-        animation  : 'swing left',
-        duration   : 100,
-    });
-    },
-    
-);
-$('.ui.dropdown').dropdown();
-
-
+let socketConnectionInitialized = false;
+let activeRoomId = null;
+let username = null;
 
 const showGenOptions = (genOptionsContent, clickedElementId) => {
     const id = `#${genOptionsContent}`;
@@ -118,23 +108,25 @@ const scrollToBottom = () =>{
 
 // =============== SUPER FUNCTION =========== //
 
-const handleItemClick = (element)=>{
+const handleItemClick = (element, event)=>{
     const tempTemplate = document.getElementById('tempTemplate')
-    const rightBar = document.getElementById('rightBar')
-    const username = document.getElementById('hiddenName').value  
-    // hide rightBar and left bar  
+    let username = document.getElementById('hiddenName').value    
     tempTemplate.classList.add('hide')
-    rightBar.classList.add('hide')
-
-
     var roomId = element.getAttribute('data-roomId');
-    // const messages = document.getElementById('messages');
-    
-    initializeSocketConnection(username, roomId);
+    document.getElementById('activeRoom').value = roomId
+    const currentActiveRoomId = document.getElementById('activeRoom').value;
 
-    // fetch room messages
-    fetchRoomMessages(roomId)
+    if (currentActiveRoomId && currentActiveRoomId !== activeRoomId) {
+        // Set the active room and the flag to indicate that the connection is now initialized
+        activeRoomId = currentActiveRoomId;
+        socketConnectionInitialized = true;
 
+        // Fetch room messages
+        fetchRoomMessages(roomId);
+    } else {
+        // If the active room is the same, do nothing or handle as needed
+        console.log("Socket connection already initialized for this room");
+    }
 }
 
 // ========================= PREPEND MESSAGE FUNCTION ============================ //
@@ -168,77 +160,12 @@ const appendMessages = (message, username, created_at) =>{
     
 }
 
-
-// ========================= SOCKET ENGINE FUNCTION ============================ //
-
-function initializeSocketConnection(username, roomId) {
-    const socket = io.connect('http://127.0.0.1:5008/');
-
-    socket.on('connect', () => {
-        socket.emit('join_room', {
-            username: username,
-            room: roomId
-        });
-    });
-
-    window.onbeforeunload = () => {
-        socket.emit('leave_room', {
-            username: username,
-            room: roomId
-        });
-    };
-
-    socket.on('receive_message', (data) => {
-        createMessage(data.username, data.message, data.created_at);
-        scrollToBottom()
-    });
-
-    socket.on('join_room_announcement', (data) => {
-
-        if (data.username !== username) {
-            message = `<b>${data.username}</b> has joined the room`;
-            createMessage(data.username, message, data.created_at);
-        }
-    });
-
-    socket.on('leave_room_announcement', function (data) {
-        message = `<b>${data.username}</b> has left the room`;
-        createMessage(data.username, message, data.created_at);
-    });
-
-    const createMessage = (profileName, msg, created_at) => {
-        appendMessages(msg, profileName, created_at)
-    };
-
-// ============================ SEND BUTTON TO SEND MESSAGE TO BACKEND ======================= //
-    const messageInput = document.getElementById('message');
-    messageInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-
-            const messageValue = messageInput.value.trim();
-
-            if (messageValue !== '') {
-                socket.emit('send_message', {
-                    'username': username,
-                    'message': messageValue,
-                    'room': roomId
-                });
-                messageInput.value = '';
-                messageInput.focus();
-            }
-        }
-    });
-}
-
 // =============== FUNCTION THAT FETCHES ROOM MESSAGES ==================== //
 const fetchRoomMessages = (roomId) => {
     $.ajax({
         type: 'POST',
         url: '/groupchat/' + roomId,
         success: function(response) {
-            // Handle success (if needed)
-            // console.log(response.room_members);
             const roomName = response.room.name
             document.getElementById('roomTitle').textContent = roomName
             const chatRoomOptionBtn = document.querySelectorAll('.chat-room-option-btn')
@@ -246,11 +173,17 @@ const fetchRoomMessages = (roomId) => {
                 button.addEventListener('click', (e)=>{
                     e.preventDefault()
                     const dataAttributeVal = e.currentTarget.getAttribute('data-btn_type');
-                    const availableAttributes = ['editRoom','roomInfo','clearChats','deleteChats','reportUser','block']
-                    if (dataAttributeVal === availableAttributes[1]){
-                        RoomInformation(response.room_members, roomName)      
+                    const availableAttributes = ['roomInfo','editRoom','clearChats','deleteChats','reportUser','block']
+                    if (dataAttributeVal === availableAttributes[0]){
+                        RoomInformation(response.room_members, roomName)     
                     }
-                    else if(dataAttributeVal === availableAttributes[0]){
+                    else if(dataAttributeVal === availableAttributes[1]){
+                        const rooMembers = fetchRoomMembers(response.room_members)
+                        document.getElementById('newGroupName').value = roomName
+                        document.getElementById('newGroupMembers').value = rooMembers
+
+
+                        // RoomInformation(response.room_members, roomName)
                         const members_check = response.room_members
                         let isCurrentUser = false
 
@@ -260,14 +193,23 @@ const fetchRoomMessages = (roomId) => {
                                 isCurrentUser = profileName === admin.added_by      
                             }
                         })
+
                         if(isCurrentUser){
                             const editRoomBtn = document.getElementById('editRoomBtn')
                             editRoomBtn.addEventListener('click', (e)=> {
                                 e.preventDefault()
-                                editRoomLogic(response.room_members, roomName, roomId)
-                                
-                                window.location.reload();
-                                document.getElementById('rightBar').classList.toggle('hide')
+                                const newRoomName = document.getElementById('newGroupName').value;
+                                const newRoomMembers = document.getElementById('newGroupMembers').value;
+
+                                if(newRoomName !== '' && newRoomMembers !== ''){
+                                    const formValues = {
+                                        newGroupNameValue: newRoomName,
+                                        newGroupMembersValue: newRoomMembers
+                                    }
+                                    console.log(formValues);
+                                    // send post request to the backend
+                                    saveEditRoomChanges(formValues, roomId)
+                                }
                             })
                         }
                         else{
@@ -281,7 +223,6 @@ const fetchRoomMessages = (roomId) => {
 
                             console.log('Only the group admin is authorized to edit this room');
                         }
-                        
                     }
                 })
             })
@@ -425,7 +366,7 @@ const fetchPreviousMessageWhenUserScrolltoTop = (roomId) => {
 };
 
 // =============== FUNCTION THAT HANDLES EDIT ROOM ==================== //
-const editRoomLogic = (members, groupName, roomId)=>{
+const fetchRoomMembers = (members)=>{
     let room_members = []; // Initialize an empty string to accumulate content
     members.forEach(member => {  
         if (member._id) {
@@ -447,41 +388,55 @@ const editRoomLogic = (members, groupName, roomId)=>{
             console.error('_id is undefined for a member:', member);
         }
     });
-    
-    const newGroupName = document.getElementById('newGroupName')
-    const newGroupMembers = document.getElementById('newGroupMembers')
-    // const newDescription = document.getElementById('newDescription')
-    newGroupMembers.value = room_members.join(',')
-    newGroupName.value = groupName
+    return room_members.join(',')
+        
+}
+const createMessage = (profileName, msg, created_at, roomId) => {
+    if (document.getElementById('activeRoom').value === activeRoomId) {
 
-    // if form is not empty
-    if (newGroupMembers.value !== '' && newGroupName.value !== ''){
-        const formValues = {
-            newGroupNameValue: newGroupName.value,
-            newGroupMembersValue: newGroupMembers.value
-        }
+        appendMessages(msg, profileName, created_at)
+    }
+};
 
-        // send a POST Request to the back end with the form data
-        const url = `/rooms/edit/${roomId}`
-        fetch(url, {
+/*
+   THIS FUNCTION SENDS REQUEST TO THE SERVER TO EDIT THE ROOM
+   IF THE REQUEST IS SUCCESSFUL, THE PAGE IS RELOADED AUTHOMATICALLY
+*/
+const saveEditRoomChanges = async (formData, roomId) => {
+    try {
+        const url = `/rooms/edit/${roomId}`;
+        const response = await fetch(url, {
             method: 'POST',
-            body: JSON.stringify(formValues),
+            body: JSON.stringify(formData),
             headers: {
                 'Content-Type': 'application/json'
             }
-        }).then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            return response.json();
-        }).then(data => {
-            console.log('Success:', data);
-        }).catch(error => {
-            console.error('Error:', error);
         });
-    }
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        // Check if the response is JSON
+        if (response.headers.get('content-type')?.includes('application/json')) {
+            const responseData = await response.json();
+            console.log('Success:', responseData);
+        } else {
+            const responseText = await response.text();
+            console.log('Non-JSON Response:', responseText);
+        }
+
+        // Reload the page after a successful response
+        window.location.reload();
         
-}
+        // Toggle the 'hide' class for the element with ID 'rightBar'
+        document.getElementById('rightBar').classList.toggle('hide');
+
+    } catch (error) {
+        console.error('Error:', error);
+    }
+};
+
 
 // ================================== FUNCTION THAT CREATES NEW GROUP ============================ //
 const createNewGroup = () => {
@@ -543,3 +498,104 @@ logOutBtn.addEventListener('click', logOut)
 
 
 
+// ========================= SOCKET ENGINE FUNCTION ============================ //
+
+// Handle message input
+const messageInput = document.getElementById('message');
+messageInput.addEventListener('keydown', async (event) => {
+    let username = document.getElementById('hiddenName').value
+    if (event.key === 'Enter') {
+        event.preventDefault();
+
+        const socket = io.connect();
+
+        // Wrap the socket connection in a Promise
+        const connectPromise = new Promise((resolve) => {
+            socket.on('connect', () => {
+                resolve();
+            });
+        });
+
+        // Emit the 'join_room' event after the connection is established
+        connectPromise.then(() => {
+            socket.emit('join_room', {
+                username: username,
+                room: activeRoomId
+            });
+        });
+
+        // Handle 'leave_room' on window unload
+        window.onbeforeunload = () => {
+            // Wrap the 'leave_room' event in a Promise
+            const leaveRoomPromise = new Promise((resolve) => {
+                socket.emit('leave_room', {
+                    username: username,
+                    room: activeRoomId
+                }, () => {
+                    resolve();
+                });
+            });
+
+            // Prevent the page from unloading until 'leave_room' is acknowledged
+            return leaveRoomPromise;
+        };
+
+        // Handle 'receive_message'
+        socket.on('receive_message', (data) => {
+            if (activeRoomId){
+                createMessage(data.username, data.message, data.created_at, activeRoomId);
+            }
+            scrollToBottom();
+        });
+
+        // Handle 'join_room_announcement'
+        socket.on('join_room_announcement', (data) => {
+            // console.log(data);
+
+            if (data.username !== username) {
+                const message = `<b>${data.username}</b> has joined the room`;
+                createMessage(data.username, message, data.created_at, activeRoomId);
+            }
+        });
+
+        // Handle 'leave_room_announcement'
+        socket.on('leave_room_announcement', (data) => {
+            // console.log(data);
+            const message = `<b>${data.username}</b> has left the room`;
+            
+            // Wrap the 'createMessage' call in a Promise
+            const createMessagePromise = new Promise((resolve) => {
+                createMessage(data.username, message, data.created_at, activeRoomId);
+                resolve();
+            });
+
+            // Wait for 'createMessage' to complete
+            createMessagePromise.then(() => {
+                // Additional async operations if needed
+            });
+        });
+
+        const messageValue = messageInput.value.trim();
+
+        if (messageValue !== '') {
+            // Wrap the 'send_message' event in a Promise
+            const sendMessagePromise = new Promise((resolve) => {
+                socket.emit('send_message', {
+                    'username': username,
+                    'message': messageValue,
+                    'room': activeRoomId
+                }, () => {
+                    resolve();
+                });
+            });
+
+            // Wait for the 'send_message' event to be acknowledged
+            await sendMessagePromise;
+
+            messageInput.value = '';
+            messageInput.focus();
+            // console.log('Room ID: ',roomId);
+            console.log('Active Room: ',activeRoomId);
+        }
+    }
+});
