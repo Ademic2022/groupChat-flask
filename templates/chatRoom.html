@@ -77,7 +77,7 @@
                 <div class="ui list">
 
                     {% for room in rooms %}
-                        <div class="dynamic-content-custom-items" data-roomId="{{room._id.room_id }}" onclick="handleItemClick(this)">
+                        <div class="dynamic-content-custom-items" data-roomId="{{room._id.room_id }}" onclick="handleItemClick(this, event)">
                             <img class="profile-image" src="{{ url_for('static', filename = 'img/profile.png') }}">
                             <div class="title-wrapper">
                                 <div class="list-title">
@@ -193,6 +193,7 @@
                 <div class="main-search-bar">
                     <div class="ui icon input search-contents">
                         <textarea type="text" placeholder="Type a message" class="custom-inpu" id="message"></textarea>
+                        <input type="text" id="activeRoom">
                     </div>
                     <div class="main-filter-icon">
                         <i class="microphone icon"></i>
