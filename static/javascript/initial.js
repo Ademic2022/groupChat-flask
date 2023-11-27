@@ -1,3 +1,6 @@
+let socketConnectionInitialized = false;
+let activeRoomId = null;
+
 const showGenOptions = (genOptionsContent, clickedElementId) => {
     const id = `#${genOptionsContent}`;
     const chatOptionsContent = $(id);
@@ -106,21 +109,23 @@ const scrollToBottom = () =>{
 
 const handleItemClick = (element)=>{
     const tempTemplate = document.getElementById('tempTemplate')
-    const rightBar = document.getElementById('rightBar')
-    const username = document.getElementById('hiddenName').value  
-    // hide rightBar and left bar  
+    const username = document.getElementById('hiddenName').value    
     tempTemplate.classList.add('hide')
-    rightBar.classList.add('hide')
-
-
     var roomId = element.getAttribute('data-roomId');
-    // const messages = document.getElementById('messages');
-    
-    initializeSocketConnection(username, roomId);
 
-    // fetch room messages
-    fetchRoomMessages(roomId)
+    if (roomId !== activeRoomId) {
+        console.log('Item clicked with roomId:', roomId);
 
+        // Initialize socket connection
+        initializeSocketConnection(username, roomId);
+
+        // Set the active room and the flag to indicate that the connection is now initialized
+        activeRoomId = roomId;
+        socketConnectionInitialized = true;
+
+        // Fetch room messages
+        fetchRoomMessages(roomId);
+    }
 }
 
 // ========================= PREPEND MESSAGE FUNCTION ============================ //
@@ -157,59 +162,96 @@ const appendMessages = (message, username, created_at) =>{
 
 // ========================= SOCKET ENGINE FUNCTION ============================ //
 
-const initializeSocketConnection = (username, roomId) => {
-    const socket = io.connect('http://127.0.0.1:5008/');
+function initializeSocketConnection(username, roomId) {
+    const socket = io.connect();
 
-    socket.on('connect', () => {
+    // Wrap the socket connection in a Promise
+    const connectPromise = new Promise((resolve) => {
+        socket.on('connect', () => {
+            resolve();
+        });
+    });
+
+    // Emit the 'join_room' event after the connection is established
+    connectPromise.then(() => {
         socket.emit('join_room', {
             username: username,
             room: roomId
         });
     });
 
+    // Handle 'leave_room' on window unload
     window.onbeforeunload = () => {
-        socket.emit('leave_room', {
-            username: username,
-            room: roomId
+        // Wrap the 'leave_room' event in a Promise
+        const leaveRoomPromise = new Promise((resolve) => {
+            socket.emit('leave_room', {
+                username: username,
+                room: roomId
+            }, () => {
+                resolve();
+            });
         });
+
+        // Prevent the page from unloading until 'leave_room' is acknowledged
+        return leaveRoomPromise;
     };
 
+    // Handle 'receive_message'
     socket.on('receive_message', (data) => {
         createMessage(data.username, data.message, data.created_at);
-        scrollToBottom()
+        scrollToBottom();
     });
 
+    // Handle 'join_room_announcement'
     socket.on('join_room_announcement', (data) => {
+        console.log(data);
 
         if (data.username !== username) {
-            message = `<b>${data.username}</b> has joined the room`;
+            const message = `<b>${data.username}</b> has joined the room`;
             createMessage(data.username, message, data.created_at);
         }
     });
 
-    socket.on('leave_room_announcement', function (data) {
-        message = `<b>${data.username}</b> has left the room`;
-        createMessage(data.username, message, data.created_at);
+    // Handle 'leave_room_announcement'
+    socket.on('leave_room_announcement', (data) => {
+        console.log(data);
+        const message = `<b>${data.username}</b> has left the room`;
+        
+        // Wrap the 'createMessage' call in a Promise
+        const createMessagePromise = new Promise((resolve) => {
+            createMessage(data.username, message, data.created_at);
+            resolve();
+        });
+
+        // Wait for 'createMessage' to complete
+        createMessagePromise.then(() => {
+            // Additional async operations if needed
+        });
     });
 
-    const createMessage = (profileName, msg, created_at) => {
-        appendMessages(msg, profileName, created_at)
-    };
-
-    // ============================ SEND BUTTON TO SEND MESSAGE TO BACKEND ======================= //
+    // Handle message input
     const messageInput = document.getElementById('message');
-    messageInput.addEventListener('keydown', (event) => {
+    messageInput.addEventListener('keydown', async (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
 
             const messageValue = messageInput.value.trim();
 
             if (messageValue !== '') {
-                socket.emit('send_message', {
-                    'username': username,
-                    'message': messageValue,
-                    'room': roomId
+                // Wrap the 'send_message' event in a Promise
+                const sendMessagePromise = new Promise((resolve) => {
+                    socket.emit('send_message', {
+                        'username': username,
+                        'message': messageValue,
+                        'room': roomId
+                    }, () => {
+                        resolve();
+                    });
                 });
+
+                // Wait for the 'send_message' event to be acknowledged
+                await sendMessagePromise;
+
                 messageInput.value = '';
                 messageInput.focus();
             }
